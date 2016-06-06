@@ -1,5 +1,5 @@
-﻿
-def import_data(numerize_category=False,process_attribute=True):
+﻿from Classifiers import *
+def import_data(numerize=True,numerize_category=False,process_attribute=True):
 	filename = 'data_refined.csv'
 	with open(filename, 'r') as f:
 		input = f.readlines()
@@ -53,10 +53,23 @@ def import_data(numerize_category=False,process_attribute=True):
 						removed[idx_record][idx]=found_so_far
 	else:
 		#delete all categorical attributes
-		for idx, attr in enumerate(legend):
+		attribute_num = len(legend)
+		for i in reversed(range(attribute_num)):
+			if instruction[i] == 'categorical':
+				legend.pop(i)
+				instruction.pop(i)
+				
+				for index in range(len(removed)):
+					removed[index].pop(i)
+
 
 				
-
+	if numerize:
+		for idx in range(len(instruction)):
+			if instruction[idx]=='numerical':
+				for idx_record in range(len(removed)):
+					removed[idx_record][idx] = float(removed[idx_record][idx])
+				
 	
 	# pre-process 'process attributes'
 	if process_attribute:
@@ -72,6 +85,9 @@ def import_data(numerize_category=False,process_attribute=True):
 						found_so_far+=1
 						prev=record[idx]
 						removed[idx_record][idx]=found_so_far
+			elif attr=='lon':
+				for i in range(len(removed)):
+					removed[i][idx]=float(119+float(removed[i][idx]))
 			elif attr=='game_date':
 				for idx_record, record in enumerate(removed):
 					date=record[idx]
@@ -89,19 +105,37 @@ def import_data(numerize_category=False,process_attribute=True):
 		legend.append('month')
 		legend.append('day')
 				
-
-	for record in removed[0:40]:
-		print(record)
 	# split data into 'Train data' and 'Test data'
 	train_data = list(filter(lambda record: record.count('')==0, removed))
 	test_data = list(filter(lambda record: record.count('')!=0, removed))
 
 	# split X and Y.
 	index_y = instruction.index('label')
+	for i in range(len(train_data)):
+		train_data[i][index_y] = int( train_data[i][index_y] )
 	train_x = [record[:index_y] + record[index_y+1:] for record in train_data]
 	train_y = [record[index_y] for record in train_data]
 	test_x = [record[:index_y] + record[index_y+1:] for record in test_data]
 
+	valid_fraction=0.9
+	train_num=int(len(train_x)*valid_fraction)
+	valid_x = train_x[train_num:]
+	train_x = train_x[:train_num]
+
+	valid_y = train_y[train_num:]
+	train_y = train_y[:train_num]
+
+	train_set = (train_x,train_y)
+	valid_set = (valid_x,valid_y)
+	
+	return (train_set, valid_set, test_x)
+	
 
 
-import_data()
+def main():
+	classifier = FirstClassifer()
+	classifier.train(0.01, n_epoch = 200)
+
+
+if __name__=='__main__':
+	main()
