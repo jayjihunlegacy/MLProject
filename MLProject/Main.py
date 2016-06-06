@@ -1,5 +1,5 @@
 ﻿from Classifiers import *
-def import_data(numerize=True,numerize_category=False,process_attribute=True):
+def import_data(numerize=True,numerize_category=False,process_attribute=True,scaling=True):
 	filename = 'data_refined.csv'
 	with open(filename, 'r') as f:
 		input = f.readlines()
@@ -43,7 +43,7 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 				found_so_far=10
 			
 			elif attr=='shot_zone_range':
-				categories={'Less Than 8 ft.':1, '8-16 ft.':2, '16-24 ft.':3, '24+ ft.':4}
+				categories={'Back Court Shot':5, 'Less Than 8 ft.':1, '8-16 ft.':2, '16-24 ft.':3, '24+ ft.':4}
 				found_so_far=10
 			
 			elif attr=='opponent':
@@ -77,6 +77,9 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 				for idx_record in range(len(removed)):
 					removed[idx_record][idx] = float(removed[idx_record][idx])
 
+	
+
+
 	# pre-process 'process attributes'
 	if process_attribute:
 		for idx, attr in enumerate(legend):
@@ -91,9 +94,7 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 						found_so_far+=1
 						prev=record[idx]
 						removed[idx_record][idx]=found_so_far
-			elif attr=='lon':
-				for i in range(len(removed)):
-					removed[i][idx]=float(119+float(removed[i][idx]))
+
 			elif attr=='game_date':
 				for idx_record, record in enumerate(removed):
 					date=record[idx]
@@ -110,6 +111,18 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 		legend.append('year')
 		legend.append('month')
 		legend.append('day')
+
+	if scaling:
+		for idx, attr in enumerate(legend):
+			if attr=='lon':
+				for i in range(len(removed)):
+					removed[i][idx]=float(128+float(removed[i][idx]))
+			elif attr=='year':
+				for i in range(len(removed)):
+					removed[i][idx]=removed[i][idx]/2000
+			elif attr=='lat':
+				for i in range(len(removed)):
+					removed[i][idx] = 10*(removed[i][idx]-33)
 				
 	# split data into 'Train data' and 'Test data'
 	train_data = list(filter(lambda record: record.count('')==0, removed))
@@ -137,10 +150,15 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 	return (train_set, valid_set, test_x)
 	
 def main():
-	classifier = FirstClassifer()
-	classifier.train(0.001, n_epoch = 20)
+	classifier = FirstClassifer(False)
+	lr = 0.0005
+	classifier.train(learning_rate=1, n_epoch = 10000)
 	score=classifier.valid()
 	print('Accuracy :',score)
+
+	
+	a=classifier.test()
+	print(a)
 
 if __name__=='__main__':
 	main()
