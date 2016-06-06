@@ -28,29 +28,38 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 		for idx, attr in enumerate(legend):
 			if attr=='combined_shot_type':
 				categories={'Bank Shot' : 1, 'Dunk' : 2, 'Hook Shot' : 3, 'Jump Shot' : 4, 'Layup' : 5, 'Tip Shot' : 6}
-				pass
+				found_so_far=10
+			
 			elif attr=='shot_type':
 				categories={'2PT Field Goal' : 1, '3PT Field Goal' : 2}
-				pass
+				found_so_far=10
+			
 			elif attr=='shot_zone_area':
 				categories={'Back Court(BC)':1, 'Left Side(L)':2, 'Left Side Center(LC)':3, 'Center(C)':4, 'Right Side Center(RC)':5, 'Right Side(R)':6}
-				pass
+				found_so_far=10
+			
 			elif attr=='shot_zone_basic':
 				categories={'Above the Break 3':1, 'Mid-Range':2, 'Restricted Area':3, 'In The Paint (Non-RA)':4, 'Backcourt':5, 'Left Corner 3':6, 'Right Corner 3':7}
-				pass
+				found_so_far=10
+			
 			elif attr=='shot_zone_range':
 				categories={'Less Than 8 ft.':1, '8-16 ft.':2, '16-24 ft.':3, '24+ ft.':4}
-				pass
+				found_so_far=10
+			
 			elif attr=='opponent':
 				categories={}
-				found_so_far=0
-				for idx_record, record in enumerate(removed):
-					if record[idx] in categories.keys():
-						removed[idx_record][idx]=categories[record[idx]]
-					else:
-						found_so_far+=1
-						categories[record[idx]]=found_so_far
-						removed[idx_record][idx]=found_so_far
+				found_so_far=0			
+
+			else:
+				continue
+
+			for idx_record, record in enumerate(removed):
+				if record[idx] in categories.keys():
+					removed[idx_record][idx]=categories[record[idx]]
+				else:
+					found_so_far+=1
+					categories[record[idx]]=found_so_far
+					removed[idx_record][idx]=found_so_far
 	else:
 		#delete all categorical attributes
 		attribute_num = len(legend)
@@ -61,16 +70,13 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 				
 				for index in range(len(removed)):
 					removed[index].pop(i)
-
-
 				
 	if numerize:
 		for idx in range(len(instruction)):
 			if instruction[idx]=='numerical':
 				for idx_record in range(len(removed)):
 					removed[idx_record][idx] = float(removed[idx_record][idx])
-				
-	
+
 	# pre-process 'process attributes'
 	if process_attribute:
 		for idx, attr in enumerate(legend):
@@ -130,12 +136,11 @@ def import_data(numerize=True,numerize_category=False,process_attribute=True):
 	
 	return (train_set, valid_set, test_x)
 	
-
-
 def main():
 	classifier = FirstClassifer()
-	classifier.train(0.01, n_epoch = 200)
-
+	classifier.train(0.001, n_epoch = 20)
+	score=classifier.valid()
+	print('Accuracy :',score)
 
 if __name__=='__main__':
 	main()
