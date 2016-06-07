@@ -1,86 +1,161 @@
-﻿import os
-os.environ['THEANO_FLAGS']='floatX=float32,device=cpu'
-from keras.models import Sequential
-from keras.layers import Dense, Dropout, Activation
-from keras.utils import np_utils
-from keras.layers.advanced_activations import LeakyReLU
-from keras.optimizers import SGD
-from Main import import_data
-import numpy as np
-
-class FirstClassifer(object):
+﻿import numpy as np
+from math import sqrt
+#action_type,combined_shot_type,game_event_id,game_id,lat,loc_x,loc_y,lon,minutes_remaining,period,playoffs,season,seconds_remaining,shot_distance,shot_made_flag,shot_type,shot_zone_area,shot_zone_basic,shot_zone_range,team_id,team_name,game_date,matchup,opponent,shot_id
+class Classifier(object):
 	'''
-	MLP only using 'numerical attributes'.
-	Never use 'categorical attributes'.
+	Abstract class for every classifier.
+	Every classifier should inherit 'Classifier'.
 	'''
-	def __init__(self, load):
-		self.loaddata()
-		self.weightname = 'Jay_Weights.weight'
+	def __init__(self):
+		pass
 
-		self.buildmodel()
+	def loaddata(self,numerize=True,process_attribute=True,scaling=True):
+		filename = 'data_refined.csv'
+		with open(filename, 'r') as f:
+			input = f.readlines()
 
-		if load:
-			self.load_weights()
-
-	def buildmodel(self):
-		self.n_input=len(self.train_x[0])
-		self.n_hidden = 80
-		self.n_output = 1
-		self.model = Sequential()
-		self.model.add(Dense(output_dim=self.n_hidden, input_dim=self.n_input))
-		self.model.add(LeakyReLU(0.1))
-		self.model.add(Dense(output_dim=self.n_output))
-		self.model.add(Activation('sigmoid'))
+		#1. listize all data.
+		legend = input[0].replace('\n','').split(',')
+		input=input[1:]		
+		listized = [line.replace('\n','').split(',') for line in input]
 		
 
-	def compile_model(self, learning_rate):
-		sgd = SGD(lr=learning_rate,decay=0.99)
-		self.model.compile(loss='binary_crossentropy',
-					 optimizer=sgd,
-					 metrics=['accuracy'])
+		#2. remove unnecessary attributes.
+		unnecessary=['combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id']		
+		removed=[]
+		for record in listized:
+			newrecord = []
+			for idx,attr in enumerate(record):
+				if legend[idx] not in unnecessary:
+					newrecord.append(attr)
+			removed.append(newrecord)
 
-	def run(self, n_epoch, learning_rate):
-		self.compile_model(learning_rate)
-		result = self.model.fit(self.train_x,self.train_y,
-						  nb_epoch=n_epoch, batch_size=100,verbose=2,
-						  validation_data=(self.valid_x, self.valid_y))
-		return result.history
+		legend = list(filter(lambda attr: attr not in unnecessary,legend))
+				
+		#3. pre-process 'process attributes'		
+		for idx, attr in enumerate(legend):
+			if attr=='game_id':
+				prev=0
+				found_so_far=0
 
-	def loaddata(self):
-		train_set, valid_set, test_x= import_data(
-			numerize=True,
-			numerize_category=True,
-			process_attribute=True
-			)
+				for idx_record, record in enumerate(removed):
+					if record[idx]==prev:
+						removed[idx_record][idx]=found_so_far
+					else:
+						found_so_far+=1
+						prev=record[idx]
+						removed[idx_record][idx]=found_so_far
 
-		self.train_x, self.train_y = train_set
-		self.valid_x, self.valid_y = valid_set
-		self.test_x = test_x
+			elif attr=='game_date':
+				for idx_record, record in enumerate(removed):
+					date=record[idx]
+					year,month,day = date.split('-')
+					year=int(year)
+					month=int(month)
+					day=int(day)
+					removed[idx_record].append(year)
+					removed[idx_record].append(month)
+					removed[idx_record].append(day)
+					removed[idx_record].remove(date)
 
-		self.train_y=np.array(self.train_y)
-		self.valid_y=np.array(self.valid_y)
+		legend.remove('game_date')
+		legend.append('year')
+		legend.append('month')
+		legend.append('day')
 
-		#print(sum(self.train_y))
-		#self.train_y = np_utils.to_categorical(self.train_y,2)
-		#self.valid_y = np_utils.to_categorical(self.valid_y,2)
-
-	def train(self,learning_rate=0.01, n_epoch=10):
-		self.run(n_epoch=n_epoch, learning_rate=learning_rate)
-		self.save_weights()
-
-	def valid(self):
-		score=self.model.evaluate(self.valid_x, self.valid_y)
-		return score[1]
-
-	def load_weights(self):
-		self.model.load_weights(self.weightname)
-		print('Loaded!')
-
-	def save_weights(self):
-		self.model.save_weights(self.weightname)
-		print('Saved!')
-
-	def test(self):
-		result = self.model.predict(self.test_x, batch_size=10)
-		return result
+		#3-1. Coalsce minutes_remaining and seconds_remaining
+		m_idx = legend.index('minutes_remaining')
+		s_idx = legend.index('seconds_remaining')
+		for idx_record, record in enumerate(removed):
+			seconds = int(record[s_idx])
+			minutes = int(record[m_idx])
+			removed[idx_record][s_idx]=seconds + 60 * minutes
+			removed[idx_record].pop(m_idx)
+		legend.remove('minutes_remaining')
+				
+			
+		#4. Numerize String attributes.
+		numericals=['lat','loc_x','loc_y', 'lon','period','playoffs','shot_distance']
+		if numerize:
+			for idx in range(len(legend)):
+				if legend[idx] in numericals:
+					for idx_record in range(len(removed)):
+						removed[idx_record][idx] = float(removed[idx_record][idx])
 		
+		#5. Specific things!					
+		removed, legend= self.loaddata_specific(removed, legend)
+
+
+		#6. Scale the attributes.
+		if scaling:
+			n=len(removed)			
+			for idx in range(len(legend)):				
+				attr = legend[idx]
+				if attr.startswith('_') or attr=='shot_made_flag':
+					continue
+
+				sum=0
+				sqr_sum=0
+				#6-1. get mean and variance.
+				for record in removed:
+					value = record[idx]
+					sum+=value
+					sqr_sum+=value*value
+
+				mean = sum/n
+				variance = sqr_sum/n - mean*mean
+				std=sqrt(variance)
+				#6-2. normalize attributes for zero-mean, and unit-variance
+				for idx_record,record in enumerate(removed):
+					value=removed[idx_record][idx]
+					value=value-mean
+					value=value/std
+					removed[idx_record][idx]=value
+			
+
+
+		for i in range(len(legend)):
+			if legend[i]=='shot_made_flag':
+				continue
+			print(legend[i], '\t\t\t',removed[0][i])
+
+		#print(legend)
+		#print(removed[0])
+		#print(len(legend))
+		#print(len(removed[0]))
+
+		#=================End of pre-processing=================
+
+		# split data into 'Train data' and 'Test data'
+		train_data = list(filter(lambda record: record.count('')==0, removed))
+		test_data = list(filter(lambda record: record.count('')!=0, removed))
+
+		# split X and Y.
+		index_y = legend.index('shot_made_flag')
+		for i in range(len(train_data)):
+			train_data[i][index_y] = int( train_data[i][index_y] )
+		train_x = [record[:index_y] + record[index_y+1:] for record in train_data]
+		train_y = [record[index_y] for record in train_data]
+		self.test_x = [record[:index_y] + record[index_y+1:] for record in test_data]
+
+		valid_fraction=0.9
+		train_num=int(len(train_x)*valid_fraction)
+		self.valid_x = train_x[train_num:]
+		self.train_x = train_x[:train_num]
+
+		self.valid_y = np.array(train_y[train_num:])
+		self.train_y = np.array(train_y[:train_num])
+	
+	def export_answer(self):
+		filename = 'sample_submission.csv'
+		with open(filename, 'r') as f:
+			tuples = f.readlines()
+
+		firstline = tuples[0]
+		tuples=tuples[1:]
+		filename = 'try.csv'
+		with open(filename, 'w') as f:
+			f.write(firstline)
+			for idx,line in enumerate(tuples):
+				id = line.split(',')[0]
+				f.write(id+','+str(self.test_y[idx])+'\n')

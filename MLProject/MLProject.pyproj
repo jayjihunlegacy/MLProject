@@ -25,6 +25,9 @@
     <Compile Include="Classifiers.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Jay_Classifiers.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Main.py" />
   </ItemGroup>
   <ItemGroup>
