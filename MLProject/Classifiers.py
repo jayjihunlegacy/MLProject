@@ -114,10 +114,10 @@ class Classifier(object):
 			
 
 
-		for i in range(len(legend)):
-			if legend[i]=='shot_made_flag':
-				continue
-			print(legend[i], '\t\t\t',removed[0][i])
+		#for i in range(len(legend)):
+		#	if legend[i]=='shot_made_flag':
+		#		continue
+		#	print(legend[i], '\t\t\t',removed[0][i])
 
 		#print(legend)
 		#print(removed[0])
@@ -145,6 +145,7 @@ class Classifier(object):
 
 		self.valid_y = np.array(train_y[train_num:])
 		self.train_y = np.array(train_y[:train_num])
+		print('Data loaded.')
 	
 	def export_answer(self):
 		filename = 'sample_submission.csv'

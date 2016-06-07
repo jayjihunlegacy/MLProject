@@ -1,8 +1,9 @@
 ﻿from Jay_Classifiers import *
 def main():
+	print('Start program')
 	classifier = FirstClassifer(False)
 	
-	classifier.train(learning_rate=0.001, n_epoch = 1000)
+	classifier.train(learning_rate=0.01, n_epoch = 1000)
 	#score=classifier.valid()
 	#print('Accuracy :',score)
 	

@@ -23,10 +23,15 @@ class FirstClassifer(Classifier):
 		if load:
 			self.load_weights()
 		self.compile_model()
+		print('Classifier ready.')
 
 	def buildmodel(self):
+		self.model2()
+		print('Model built.')
+		
+	def model1(self):
 		self.n_input=len(self.train_x[0])
-		self.n_hidden = self.n_input // 2
+		self.n_hidden = self.n_input * 5
 		self.n_output = 1
 		print(self.n_input, self.n_hidden, self.n_output)
 		self.model = Sequential()
@@ -36,7 +41,22 @@ class FirstClassifer(Classifier):
 		#self.model.add(Dropout(0.4))
 		self.model.add(Dense(output_dim=self.n_output))
 		self.model.add(Activation('sigmoid'))
-		
+
+	def model2(self):
+		dim0=len(self.train_x[0])
+		dim1=60
+		dims=[30,20,10]
+
+		self.model = Sequential()
+		self.model.add(Dense(output_dim=dim1, input_dim=dim0))
+		self.model.add(Activation('relu'))
+		#self.model.add(Dropout(0.5))
+		for i in dims:
+			self.model.add(Dense(output_dim=i))
+			self.model.add(Activation('relu'))
+			#self.model.add(Dropout(0.5))
+		self.model.add(Dense(output_dim=1))
+		self.model.add(Activation('sigmoid'))
 
 	def compile_model(self, learning_rate=0.01):
 		sgd = SGD(lr=learning_rate,decay=0.99)
@@ -122,11 +142,11 @@ class FirstClassifer(Classifier):
 
 	def load_weights(self):
 		self.model.load_weights(self.weightname)
-		print('Loaded!')
+		print('Weights loaded')
 
 	def save_weights(self):
 		self.model.save_weights(self.weightname)
-		print('Saved!')
+		print('Weights saved')
 
 	def test(self):
 		result = self.model.predict(self.test_x, batch_size=10)
