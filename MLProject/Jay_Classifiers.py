@@ -15,6 +15,11 @@ class FirstClassifer(Classifier):
 	'''
 	def __init__(self, load):
 		super().__init__()
+
+		self.numericals = ['lat','loc_x','loc_y', 'lon','period','playoffs','shot_distance']
+		self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id']
+		self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
+
 		self.loaddata()
 		self.weightname = 'Jay_Weights.weight'
 
@@ -84,12 +89,12 @@ class FirstClassifer(Classifier):
 				total[idx_record][idx]=categories[record[idx]]
 		
 		#2. One-hot encode 'Categorical attributes'
-		cat_attrs=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period','action_type']
+		
 		cat_indices={}
 		categories={}
 		keys={}
 		next_keys={}
-		for attr in cat_attrs:
+		for attr in self.categoricals:
 			categories[attr]={}
 			cat_indices[attr] = legend.index(attr)
 			next_keys[attr]=0
@@ -97,7 +102,7 @@ class FirstClassifer(Classifier):
 
 		#2-1. Observe which attributes exist.
 		for record in total:
-			for attr in cat_attrs:
+			for attr in self.categoricals:
 				idx = cat_indices[attr]
 				if record[idx] not in categories[attr].keys():
 					categories[attr][record[idx]] = next_keys[attr]
@@ -105,7 +110,7 @@ class FirstClassifer(Classifier):
 					keys[attr].append(record[idx])
 
 		#2-2. Edit records and legend.
-		for attr in cat_attrs:
+		for attr in self.categoricals:
 			idx = cat_indices[attr]
 			classes = len(keys[attr])
 			# Edit legend.
@@ -124,7 +129,7 @@ class FirstClassifer(Classifier):
 		#2-3. Remove old from records and legend.		
 		for idx in reversed(range(len(legend))):
 			attr = legend[idx]
-			if attr in cat_attrs:
+			if attr in self.categoricals:
 				legend.remove(attr)
 				for record in total:
 					record.pop(idx)

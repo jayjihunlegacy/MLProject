@@ -7,7 +7,9 @@ class Classifier(object):
 	Every classifier should inherit 'Classifier'.
 	'''
 	def __init__(self):
-		pass
+		self.unnecessary=[]
+		self.numericals=[]
+		self.categoricals=[]
 
 	def loaddata(self,numerize=True,process_attribute=True,scaling=True):
 		filename = 'data_refined.csv'
@@ -20,17 +22,16 @@ class Classifier(object):
 		listized = [line.replace('\n','').split(',') for line in input]
 		
 
-		#2. remove unnecessary attributes.
-		unnecessary=['combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id']		
+		#2. remove unnecessary attributes.		
 		removed=[]
 		for record in listized:
 			newrecord = []
 			for idx,attr in enumerate(record):
-				if legend[idx] not in unnecessary:
+				if legend[idx] not in self.unnecessary:
 					newrecord.append(attr)
 			removed.append(newrecord)
 
-		legend = list(filter(lambda attr: attr not in unnecessary,legend))
+		legend = list(filter(lambda attr: attr not in self.unnecessary,legend))
 				
 		#3. pre-process 'process attributes'		
 		for idx, attr in enumerate(legend):
@@ -75,10 +76,9 @@ class Classifier(object):
 				
 			
 		#4. Numerize String attributes.
-		numericals=['lat','loc_x','loc_y', 'lon','period','playoffs','shot_distance']
 		if numerize:
 			for idx in range(len(legend)):
-				if legend[idx] in numericals:
+				if legend[idx] in self.numericals:
 					for idx_record in range(len(removed)):
 						removed[idx_record][idx] = float(removed[idx_record][idx])
 		
