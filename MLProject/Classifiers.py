@@ -23,7 +23,7 @@ class Classifier(object):
 		legend = input[0].replace('\n','').split(',')
 		input=input[1:]		
 		removed = [line.replace('\n','').split(',') for line in input]
-		
+
 		#2. remove unnecessary attributes.
 		for attr in self.unnecessary:
 			idx=legend.index(attr)
@@ -97,6 +97,10 @@ class Classifier(object):
 				#6-1. get mean and variance.
 				for record in removed:
 					value = record[idx]
+
+					if type(value) == str:
+						print(attr)
+
 					sum+=value
 					sqr_sum+=value*value
 
@@ -135,17 +139,17 @@ class Classifier(object):
 		index_y = legend.index('shot_made_flag')
 		for i in range(len(train_data)):
 			train_data[i][index_y] = int( train_data[i][index_y] )
-		train_x = [record[:index_y] + record[index_y+1:] for record in train_data]
-		train_y = [record[index_y] for record in train_data]
+		self.train_x = [record[:index_y] + record[index_y+1:] for record in train_data]
+		self.train_y = [record[index_y] for record in train_data]
 		self.test_x = [record[:index_y] + record[index_y+1:] for record in test_data]
 
 		valid_fraction=0.9
-		train_num=int(len(train_x)*valid_fraction)
-		self.valid_x = train_x[train_num:]
-		self.train_x = train_x[:train_num]
+		train_num=int(len(self.train_x)*valid_fraction)
+		self.valid_x = self.train_x[train_num:]
+		self.train_x = self.train_x[:train_num]
 
-		self.valid_y = np.array(train_y[train_num:])
-		self.train_y = np.array(train_y[:train_num])
+		self.valid_y = np.array(self.train_y[train_num:])
+		self.train_y = np.array(self.train_y[:train_num])
 		print('Data loaded.')
 	
 	def export_answer(self):

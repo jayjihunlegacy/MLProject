@@ -12,6 +12,8 @@
     <OutputPath>.</OutputPath>
     <Name>MLProject</Name>
     <RootNamespace>MLProject</RootNamespace>
+    <InterpreterId>{7d3d398b-ba8d-41a1-9f3a-5f4b3e5b4b2b}</InterpreterId>
+    <InterpreterVersion>3.4</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,11 +34,17 @@
     <Compile Include="Meta_Classifier.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="SVM_Classifier.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="data.csv" />
     <Content Include="data_refined.csv" />
     <Content Include="sample_submission.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="{7d3d398b-ba8d-41a1-9f3a-5f4b3e5b4b2b}\3.4" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

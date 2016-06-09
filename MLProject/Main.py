@@ -1,7 +1,30 @@
 ﻿from Jay_Classifiers import *
+from SVM_Classifier import *
 from Meta_Classifier import *
 def main():
+	
 	print('Start program')
+	SVM_HanDa = SVM_Classifier(probability=True, log_proba=False, max_iter=10000, verbose=True)
+	
+	print('loading data')
+	SVM_HanDa.loaddata(print_legend=True)
+	
+	'''
+	print('training')
+	SVM_HanDa.train()
+	SVM_HanDa.printInSampleError()
+
+	print('saving')
+	SVM_HanDa.save()
+	'''
+	print('loading')
+	SVM_HanDa.load()
+
+	print('testing')
+	SVM_HanDa.test()
+	SVM_HanDa.export_answer()
+	'''
+	
 	getter = MetaClassifier()
 	getter.generate_classifiers(
 		Classifier_Type=FirstClassifer,
@@ -12,7 +35,6 @@ def main():
 	#classifier = FirstClassifer(False)
 	#classifier = getter.get_classifier(FirstClassifer,0.68)
 	classifier.train(learning_rate=0.005, n_epoch = 100)
-	''' 
 	a=
 	print(a)
 	result=classifier.test()
