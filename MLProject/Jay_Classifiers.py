@@ -13,7 +13,7 @@ class FirstClassifer(Classifier):
 	MLP only using 'numerical attributes'.
 	Never use 'categorical attributes'.
 	'''
-	def __init__(self, load):
+	def __init__(self, load=False):
 		super().__init__()
 		dramatic=True
 		if dramatic:
@@ -29,8 +29,9 @@ class FirstClassifer(Classifier):
 			self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
 		self.loaddata(True)
 		self.weightname = 'Jay_Weights.weight'
-
-		self.build_until_good()
+		
+		self.buildmodel()
+		#self.build_until_good()
 
 		if load:
 			self.load_weights()
@@ -50,18 +51,16 @@ class FirstClassifer(Classifier):
 
 	def buildmodel(self):
 		self.model1()
-		print('Model built.')
 		self.compile_model()
 		
 	def model1(self):
 		self.n_input=len(self.train_x[0])
 		self.n_hidden = self.n_input * 2
 		self.n_output = 1
-		print(self.n_input, self.n_hidden, self.n_output)
 		self.model = Sequential()
 		self.model.add(Dense(output_dim=self.n_hidden, input_dim=self.n_input))
-		self.model.add(Activation('relu'))
-		#self.model.add(LeakyReLU(0.1))
+		#self.model.add(Activation('relu'))
+		self.model.add(LeakyReLU(0.1))
 		#self.model.add(Dropout(0.4))
 		self.model.add(Dense(output_dim=self.n_output))
 		self.model.add(Activation('sigmoid'))
@@ -80,7 +79,7 @@ class FirstClassifer(Classifier):
 			self.model.add(Activation('relu'))
 			#self.model.add(Dropout(0.5))
 		self.model.add(Dense(output_dim=1))
-		self.model.add(Activation('sigmoid'))
+		self.model.add(Activation('hard_sigmoid'))
 
 	def compile_model(self, learning_rate=0.01):
 		sgd = SGD(lr=learning_rate,decay=0.99)
@@ -161,7 +160,7 @@ class FirstClassifer(Classifier):
 		self.save_weights()
 
 	def valid(self):
-		score=self.model.evaluate(self.valid_x, self.valid_y)
+		score=self.model.evaluate(self.valid_x, self.valid_y,verbose=0)
 		return score
 
 	def load_weights(self):
