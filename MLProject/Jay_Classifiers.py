@@ -18,8 +18,8 @@ class FirstClassifer(Classifier):
 		dramatic=True
 		if dramatic:
 			self.numericals = ['loc_x','loc_y', 'shot_distance']
-			self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat','shot_zone_area','shot_zone_basic','shot_zone_range','opponent','date','shot_type','period','game_date','game_id','minutes_remaining','seconds_remaining']
-			self.categoricals=[]
+			self.unnecessary=['lat','lon','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat','shot_zone_area','shot_zone_basic','shot_zone_range','opponent','date','shot_type','period','game_date','game_id','minutes_remaining','seconds_remaining']
+			self.categoricals=['action_type','combined_shot_type']
 			#self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat']
 			
 			#self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
@@ -42,7 +42,7 @@ class FirstClassifer(Classifier):
 	def build_until_good(self):
 		self.buildmodel()
 		score=self.valid()
-		while score[0] > 0.69:
+		while score[0] > 0.67:
 			print('Rebuild due to low valid accuracy:',score)
 			self.buildmodel()
 			score=self.valid()
