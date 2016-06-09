@@ -22,20 +22,14 @@ class Classifier(object):
 		#1. listize all data.
 		legend = input[0].replace('\n','').split(',')
 		input=input[1:]		
-		listized = [line.replace('\n','').split(',') for line in input]
+		removed = [line.replace('\n','').split(',') for line in input]
 		
-
-		#2. remove unnecessary attributes.		
-		removed=[]
-		for record in listized:
-			newrecord = []
-			for idx,attr in enumerate(record):
-				if legend[idx] not in self.unnecessary:
-					newrecord.append(attr)
-			removed.append(newrecord)
-
-		legend = list(filter(lambda attr: attr not in self.unnecessary,legend))
-				
+		#2. remove unnecessary attributes.
+		for attr in self.unnecessary:
+			idx=legend.index(attr)
+			removed = [record[:idx] + record[idx+1:] for record in removed]
+			legend.remove(attr)
+					
 		#3. pre-process 'process attributes'		
 		for idx, attr in enumerate(legend):
 			if attr=='game_id':
@@ -89,8 +83,7 @@ class Classifier(object):
 		
 		#5. Specific things!					
 		removed, legend= self.loaddata_specific(removed, legend)
-
-
+		
 		#6. Scale the attributes.
 		if scaling:
 			n=len(removed)			
@@ -119,12 +112,9 @@ class Classifier(object):
 			
 
 		if print_legend:
-			print('====legend====')
-			for i in range(len(legend)):
-				if legend[i]!='shot_made_flag':
-					print(legend[i])
-
-			print('==============')
+			print('='*10,'legend','='*10)
+			[print(attr) if attr!='shot_made_flag' else None for attr in legend]
+			print('='*25)
 		#for i in range(len(legend)):
 		#	if legend[i]=='shot_made_flag':
 		#		continue
@@ -139,7 +129,7 @@ class Classifier(object):
 
 		# split data into 'Train data' and 'Test data'
 		train_data = list(filter(lambda record: record.count('')==0, removed))
-		test_data = list(filter(lambda record: record.count('')!=0, removed))
+		test_data = list(filter(lambda record: record.count(''), removed))
 
 		# split X and Y.
 		index_y = legend.index('shot_made_flag')

@@ -15,11 +15,15 @@ class FirstClassifer(Classifier):
 	'''
 	def __init__(self, load=False):
 		super().__init__()
+
 		dramatic=True
 		if dramatic:
 			self.numericals = ['loc_x','loc_y', 'shot_distance']
-			self.unnecessary=['lat','lon','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat','shot_zone_area','shot_zone_basic','shot_zone_range','opponent','date','shot_type','period','game_date','game_id','minutes_remaining','seconds_remaining']
-			self.categoricals=['action_type','combined_shot_type']
+			self.unnecessary=['game_event_id','season','team_id','team_name','matchup',\
+					 'shot_id','lon','period','playoffs','lat','shot_zone_area','shot_zone_basic',\
+					 'shot_zone_range','opponent','shot_type','game_date','game_id','combined_shot_type']#,\
+					 #'minutes_remaining','seconds_remaining']
+			self.categoricals=['action_type']
 			#self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat']
 			
 			#self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
@@ -87,10 +91,10 @@ class FirstClassifer(Classifier):
 					 optimizer=sgd,
 					 metrics=['accuracy'])
 
-	def run(self, n_epoch, learning_rate):
+	def run(self, n_epoch, learning_rate, verbose):
 		self.compile_model(learning_rate)
 		result = self.model.fit(self.train_x,self.train_y,
-						  nb_epoch=n_epoch, batch_size=32,verbose=2,
+						  nb_epoch=n_epoch, batch_size=32,verbose=verbose,
 						  validation_data=(self.valid_x, self.valid_y))
 		return result.history
 
@@ -155,8 +159,8 @@ class FirstClassifer(Classifier):
 		
 		return (total, legend)
 
-	def train(self,learning_rate=0.01, n_epoch=10, save=True):
-		result=self.run(n_epoch=n_epoch, learning_rate=learning_rate)
+	def train(self,learning_rate=0.01, n_epoch=10, save=True, verbose=2):
+		result=self.run(n_epoch=n_epoch, learning_rate=learning_rate, verbose=verbose)
 		if save:
 			self.save_weights()
 		return result
