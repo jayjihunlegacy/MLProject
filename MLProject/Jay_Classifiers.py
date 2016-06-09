@@ -15,28 +15,47 @@ class FirstClassifer(Classifier):
 	'''
 	def __init__(self, load):
 		super().__init__()
-
-		self.numericals = ['lat','loc_x','loc_y', 'lon','period','playoffs','shot_distance']
-		self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id']
-		self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
-
-		self.loaddata()
+		dramatic=True
+		if dramatic:
+			self.numericals = ['loc_x','loc_y', 'shot_distance']
+			self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat','shot_zone_area','shot_zone_basic','shot_zone_range','opponent','date','shot_type','period','game_date','game_id','minutes_remaining','seconds_remaining']
+			self.categoricals=[]
+			#self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat']
+			
+			#self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
+		else:
+			self.numericals = ['lat','loc_x','loc_y', 'lon','period','playoffs','shot_distance']
+			self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id']
+			self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
+		self.loaddata(True)
 		self.weightname = 'Jay_Weights.weight'
 
-		self.buildmodel()
+		self.build_until_good()
 
 		if load:
 			self.load_weights()
 		self.compile_model()
 		print('Classifier ready.')
 
+
+
+	def build_until_good(self):
+		self.buildmodel()
+		score=self.valid()
+		while score[0] > 0.69:
+			print('Rebuild due to low valid accuracy:',score)
+			self.buildmodel()
+			score=self.valid()
+
+
 	def buildmodel(self):
-		self.model2()
+		self.model1()
 		print('Model built.')
+		self.compile_model()
 		
 	def model1(self):
 		self.n_input=len(self.train_x[0])
-		self.n_hidden = self.n_input * 5
+		self.n_hidden = self.n_input * 2
 		self.n_output = 1
 		print(self.n_input, self.n_hidden, self.n_output)
 		self.model = Sequential()
@@ -72,7 +91,7 @@ class FirstClassifer(Classifier):
 	def run(self, n_epoch, learning_rate):
 		self.compile_model(learning_rate)
 		result = self.model.fit(self.train_x,self.train_y,
-						  nb_epoch=n_epoch, batch_size=100,verbose=2,
+						  nb_epoch=n_epoch, batch_size=32,verbose=2,
 						  validation_data=(self.valid_x, self.valid_y))
 		return result.history
 
@@ -143,7 +162,7 @@ class FirstClassifer(Classifier):
 
 	def valid(self):
 		score=self.model.evaluate(self.valid_x, self.valid_y)
-		return score[1]
+		return score
 
 	def load_weights(self):
 		self.model.load_weights(self.weightname)
@@ -155,7 +174,7 @@ class FirstClassifer(Classifier):
 
 	def test(self):
 		result = self.model.predict(self.test_x, batch_size=10)
-		result = [1 if value[0]>0.5 else 0 for value in result]
+		result = [value[0] for value in result]
 		self.test_y = result
 		return result
 		

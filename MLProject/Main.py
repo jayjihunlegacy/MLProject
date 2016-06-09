@@ -2,17 +2,11 @@
 def main():
 	print('Start program')
 	classifier = FirstClassifer(False)
-	
-	classifier.train(learning_rate=0.012, n_epoch = 1000)
-	#score=classifier.valid()
-	#print('Accuracy :',score)
-	
+	classifier.train(learning_rate=0.01, n_epoch = 200)
 	
 	result=classifier.test()
 	
-	print('Test results:')
-	print(result)
-	#classifier.export_answer()
+	classifier.export_answer()
 
 if __name__=='__main__':
 	main()

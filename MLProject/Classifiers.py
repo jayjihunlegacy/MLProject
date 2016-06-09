@@ -11,7 +11,10 @@ class Classifier(object):
 		self.numericals=[]
 		self.categoricals=[]
 
-	def loaddata(self,numerize=True,process_attribute=True,scaling=True):
+	def loaddata(self,print_legend):
+		numerize=True
+		process_attribute=True
+		scaling=True
 		filename = 'data_refined.csv'
 		with open(filename, 'r') as f:
 			input = f.readlines()
@@ -59,20 +62,22 @@ class Classifier(object):
 					removed[idx_record].append(day)
 					removed[idx_record].remove(date)
 
-		legend.remove('game_date')
-		legend.append('year')
-		legend.append('month')
-		legend.append('day')
+		if 'game_date' in legend:
+			legend.remove('game_date')
+			legend.append('year')
+			legend.append('month')
+			legend.append('day')
 
 		#3-1. Coalsce minutes_remaining and seconds_remaining
-		m_idx = legend.index('minutes_remaining')
-		s_idx = legend.index('seconds_remaining')
-		for idx_record, record in enumerate(removed):
-			seconds = int(record[s_idx])
-			minutes = int(record[m_idx])
-			removed[idx_record][s_idx]=seconds + 60 * minutes
-			removed[idx_record].pop(m_idx)
-		legend.remove('minutes_remaining')
+		if 'minutes_remaining' in legend and 'seconds_remaining' in legend:
+			m_idx = legend.index('minutes_remaining')
+			s_idx = legend.index('seconds_remaining')
+			for idx_record, record in enumerate(removed):
+				seconds = int(record[s_idx])
+				minutes = int(record[m_idx])
+				removed[idx_record][s_idx]=seconds + 60 * minutes
+				removed[idx_record].pop(m_idx)
+			legend.remove('minutes_remaining')
 				
 			
 		#4. Numerize String attributes.
@@ -113,7 +118,13 @@ class Classifier(object):
 					removed[idx_record][idx]=value
 			
 
+		if print_legend:
+			print('====legend====')
+			for i in range(len(legend)):
+				if legend[i]!='shot_made_flag':
+					print(legend[i])
 
+			print('==============')
 		#for i in range(len(legend)):
 		#	if legend[i]=='shot_made_flag':
 		#		continue
