@@ -155,9 +155,11 @@ class FirstClassifer(Classifier):
 		
 		return (total, legend)
 
-	def train(self,learning_rate=0.01, n_epoch=10):
-		self.run(n_epoch=n_epoch, learning_rate=learning_rate)
-		self.save_weights()
+	def train(self,learning_rate=0.01, n_epoch=10, save=True):
+		result=self.run(n_epoch=n_epoch, learning_rate=learning_rate)
+		if save:
+			self.save_weights()
+		return result
 
 	def valid(self):
 		score=self.model.evaluate(self.valid_x, self.valid_y,verbose=0)
