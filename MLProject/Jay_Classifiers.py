@@ -1,4 +1,5 @@
-﻿import os
+﻿# for FirstClassifier
+import os
 os.environ['THEANO_FLAGS']='floatX=float32,device=cpu'
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
@@ -7,6 +8,10 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.optimizers import SGD
 from Classifiers import *
 import numpy as np
+
+# for SecondClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import log_loss
 
 class FirstClassifer(Classifier):
 	'''
@@ -21,9 +26,9 @@ class FirstClassifer(Classifier):
 			self.numericals = ['loc_x','loc_y', 'shot_distance']
 			self.unnecessary=['game_event_id','season','team_id','team_name','matchup',\
 					 'shot_id','lon','period','playoffs','lat','shot_zone_area','shot_zone_basic',\
-					 'shot_zone_range','opponent','shot_type','game_date','game_id','combined_shot_type']#,\
-					 #'minutes_remaining','seconds_remaining']
-			self.categoricals=['action_type']
+					 'shot_zone_range','opponent','shot_type','game_date','game_id',\
+					 'minutes_remaining','seconds_remaining']
+			self.categoricals=['action_type','combined_shot_type']
 			#self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id','lon','period','playoffs','lat']
 			
 			#self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
@@ -32,7 +37,8 @@ class FirstClassifer(Classifier):
 			self.unnecessary=['action_type','combined_shot_type','lat','lon','combined_shot_type','game_event_id','season','team_id','team_name','matchup','shot_id']
 			self.categoricals=['shot_zone_area','shot_zone_basic','shot_zone_range','opponent','month','day','shot_type','period']
 		self.loaddata(True)
-		self.weightname = 'Jay_Weights.weight'
+		#self.weightname = 'Jay_Weights.weight'
+		self.weightname='Jay_Weights_T6632.weight'
 		
 		self.buildmodel()
 		#self.build_until_good()
@@ -61,6 +67,7 @@ class FirstClassifer(Classifier):
 		self.n_input=len(self.train_x[0])
 		self.n_hidden = self.n_input * 2
 		self.n_output = 1
+		print(self.n_input,self.n_hidden,self.n_output)
 		self.model = Sequential()
 		self.model.add(Dense(output_dim=self.n_hidden, input_dim=self.n_input))
 		#self.model.add(Activation('relu'))
@@ -98,66 +105,8 @@ class FirstClassifer(Classifier):
 						  validation_data=(self.valid_x, self.valid_y))
 		return result.history
 
-	def loaddata_specific(self, total, legend):
-		numerize_category=True
-		#1. Numerize 'Numerical categorical attributes'
-		for idx, attr in enumerate(legend):
-			if attr=='shot_type':
-				categories={'2PT Field Goal' : 1, '3PT Field Goal' : 2}
-			else:
-				continue
-
-			for idx_record, record in enumerate(total):
-				total[idx_record][idx]=categories[record[idx]]
-		
-		#2. One-hot encode 'Categorical attributes'
-		
-		cat_indices={}
-		categories={}
-		keys={}
-		next_keys={}
-		for attr in self.categoricals:
-			categories[attr]={}
-			cat_indices[attr] = legend.index(attr)
-			next_keys[attr]=0
-			keys[attr]=[]
-
-		#2-1. Observe which attributes exist.
-		for record in total:
-			for attr in self.categoricals:
-				idx = cat_indices[attr]
-				if record[idx] not in categories[attr].keys():
-					categories[attr][record[idx]] = next_keys[attr]
-					next_keys[attr]+=1
-					keys[attr].append(record[idx])
-
-		#2-2. Edit records and legend.
-		for attr in self.categoricals:
-			idx = cat_indices[attr]
-			classes = len(keys[attr])
-			# Edit legend.
-			for one_hot in range(classes):
-				new_name = '_'+attr+'('+str(keys[attr][one_hot])+'['+str(one_hot)+'])'
-				legend.append(new_name)
-
-			# Edit all records.
-			for record in total:			
-				class_i = categories[attr][record[idx]]
-				for one_hot in range(classes):
-					if one_hot == class_i:
-						record.append(1)
-					else:
-						record.append(0)
-		#2-3. Remove old from records and legend.		
-		for idx in reversed(range(len(legend))):
-			attr = legend[idx]
-			if attr in self.categoricals:
-				legend.remove(attr)
-				for record in total:
-					record.pop(idx)
-
-		
-		return (total, legend)
+	def loaddata_specific(self, removed, legend):
+		return (removed, legend)
 
 	def train(self,learning_rate=0.01, n_epoch=10, save=True, verbose=2):
 		result=self.run(n_epoch=n_epoch, learning_rate=learning_rate, verbose=verbose)
@@ -182,4 +131,48 @@ class FirstClassifer(Classifier):
 		result = [value[0] for value in result]
 		self.test_y = result
 		return result
+		
+class SecondClassifier(Classifier):
+	'''
+	Classifier using logistic regression.
+	'''
+	def __init__(self):
+		super().__init__()
+		self.numericals = ['loc_x','loc_y', 'shot_distance']
+		self.unnecessary=['game_event_id','season','team_id','matchup','team_name',\
+					 'shot_id','lon','playoffs','lat',\
+					 'shot_type','game_date','game_id',\
+					 'combined_shot_type',\
+					 ]
+					 #'minutes_remaining','seconds_remaining']
+		self.categoricals=['action_type','opponent','shot_zone_area','shot_zone_basic','shot_zone_range','period',]
+		self.loaddata(True)
+		print('Classifier ready.')
+
+	def train(self):
+		self.agent = LogisticRegression(solver='newton-cg')
+		sd_idx=self.legend.index('shot_distance')
+		weights=[10 if more else 1 for more in self.train_distance_large]
+		weights=np.array(weights)
+		use_weights=False
+		if use_weights:
+			self.agent.fit(self.train_x, self.train_y, weights)
+		else:
+			self.agent.fit(self.train_x, self.train_y)
+		return self.get_train_loss()
+		
+	def get_train_loss(self):		
+		pred_y = self.agent.predict_proba(self.train_x)
+		result=[record[1] for record in pred_y]
+		return log_loss(self.train_y, result)
+
+	def valid(self):
+		pred_y = self.agent.predict_proba(self.valid_x)
+		result=[record[1] for record in pred_y]
+		return log_loss(self.valid_y,result)
+
+	def test(self):
+		pred_y = self.agent.predict_proba(self.test_x)
+		result = [record[1] for record in pred_y]
+		self.test_y = result
 		

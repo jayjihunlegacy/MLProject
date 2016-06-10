@@ -30,6 +30,15 @@ class Classifier(object):
 			removed = [record[:idx] + record[idx+1:] for record in removed]
 			legend.remove(attr)
 					
+		if 'matchup' in legend:
+			idx = legend.index('matchup')
+			for record in removed:
+				record[idx]=1 if '@' in record[idx] else 0
+
+			legend[idx]='_away'
+		
+
+
 		#3. pre-process 'process attributes'		
 		for idx, attr in enumerate(legend):
 			if attr=='game_id':
@@ -73,7 +82,12 @@ class Classifier(object):
 				removed[idx_record].pop(m_idx)
 			legend.remove('minutes_remaining')
 				
-			
+		if 'seconds_remaining' in legend:
+			idx= legend.index('seconds_remaining')
+			for record in removed:
+				record.append(1 if record[idx]<2 else 0)
+			legend.append('_last_moment')
+
 		#4. Numerize String attributes.
 		if numerize:
 			for idx in range(len(legend)):
@@ -81,9 +95,71 @@ class Classifier(object):
 					for idx_record in range(len(removed)):
 						removed[idx_record][idx] = float(removed[idx_record][idx])
 		
-		#5. Specific things!					
+		#5. Specific things!	
+		numerize_category=True
+		#1. Numerize 'Numerical categorical attributes'
+		for idx, attr in enumerate(legend):
+			if attr=='shot_type':
+				categories={'2PT Field Goal' : 1, '3PT Field Goal' : 2}
+			else:
+				continue
+
+			for idx_record, record in enumerate(removed):
+				removed[idx_record][idx]=categories[record[idx]]
+		
+		#2. One-hot encode 'Categorical attributes'
+		
+		cat_indices={}
+		categories={}
+		keys={}
+		next_keys={}
+		for attr in self.categoricals:
+			categories[attr]={}
+			cat_indices[attr] = legend.index(attr)
+			next_keys[attr]=0
+			keys[attr]=[]
+
+		#2-1. Observe which attributes exist.
+		for record in removed:
+			for attr in self.categoricals:
+				idx = cat_indices[attr]
+				if record[idx] not in categories[attr].keys():
+					categories[attr][record[idx]] = next_keys[attr]
+					next_keys[attr]+=1
+					keys[attr].append(record[idx])
+
+		#2-2. Edit records and legend.
+		for attr in self.categoricals:
+			idx = cat_indices[attr]
+			classes = len(keys[attr])
+			# Edit legend.
+			for one_hot in range(classes):
+				new_name = '_'+attr+'('+str(keys[attr][one_hot])+'['+str(one_hot)+'])'
+				legend.append(new_name)
+
+			# Edit all records.
+			for record in removed:			
+				class_i = categories[attr][record[idx]]
+				for one_hot in range(classes):
+					if one_hot == class_i:
+						record.append(1)
+					else:
+						record.append(0)
+
+		#2-3. Remove old from records and legend.		
+		for idx in reversed(range(len(legend))):
+			attr = legend[idx]
+			if attr in self.categoricals:
+				legend.remove(attr)
+				for record in removed:
+					record.pop(idx)
+						
 		removed, legend= self.loaddata_specific(removed, legend)
 		
+		sd_idx = legend.index('shot_distance')
+		self.train_distance_large = [1 if record[sd_idx]>40 else 0 \
+			for record in list(filter(lambda record: record.count('')==0, removed))[:23127]]
+
 		#6. Scale the attributes.
 		if scaling:
 			n=len(removed)			
@@ -115,10 +191,6 @@ class Classifier(object):
 			print('='*10,'legend','='*10)
 			[print(attr) if attr!='shot_made_flag' else None for attr in legend]
 			print('='*25)
-		#for i in range(len(legend)):
-		#	if legend[i]=='shot_made_flag':
-		#		continue
-		#	print(legend[i], '\t\t\t',removed[0][i])
 
 		#print(legend)
 		#print(removed[0])
@@ -126,6 +198,8 @@ class Classifier(object):
 		#print(len(removed[0]))
 
 		#=================End of pre-processing=================
+
+		self.legend=legend
 
 		# split data into 'Train data' and 'Test data'
 		train_data = list(filter(lambda record: record.count('')==0, removed))
@@ -143,7 +217,6 @@ class Classifier(object):
 		train_num=int(len(train_x)*valid_fraction)
 		self.valid_x = train_x[train_num:]
 		self.train_x = train_x[:train_num]
-
 		self.valid_y = np.array(train_y[train_num:])
 		self.train_y = np.array(train_y[:train_num])
 		print('Data loaded.')
@@ -161,3 +234,6 @@ class Classifier(object):
 			for idx,line in enumerate(tuples):
 				id = line.split(',')[0]
 				f.write(id+','+str(self.test_y[idx])+'\n')
+
+	def loaddata_specific(self, removed, legend):
+		return (removed,legend)
