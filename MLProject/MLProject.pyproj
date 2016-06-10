@@ -12,7 +12,7 @@
     <OutputPath>.</OutputPath>
     <Name>MLProject</Name>
     <RootNamespace>MLProject</RootNamespace>
-    <InterpreterId>{7d3d398b-ba8d-41a1-9f3a-5f4b3e5b4b2b}</InterpreterId>
+    <InterpreterId>{0f93c09c-43f7-4188-bd94-e08157ab5ddd}</InterpreterId>
     <InterpreterVersion>3.4</InterpreterVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -44,7 +44,7 @@
     <Content Include="sample_submission.csv" />
   </ItemGroup>
   <ItemGroup>
-    <InterpreterReference Include="{7d3d398b-ba8d-41a1-9f3a-5f4b3e5b4b2b}\3.4" />
+    <InterpreterReference Include="{0f93c09c-43f7-4188-bd94-e08157ab5ddd}\3.4" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

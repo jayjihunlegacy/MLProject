@@ -1,5 +1,7 @@
 from Classifiers import *
 from sklearn import svm
+from math import log
+import scipy as sp
 import pickle
 
 ################ LEGEND ################
@@ -19,9 +21,9 @@ import pickle
 #   shot_distance	| numericals
 #  shot_made_flag	| #
 #    shot_type		| categoricals
-#  shot_zone_area	| unnecessary
-#  shot_zone_basic	| unnecessary
-#  shot_zone_range	| unnecessary
+#  shot_zone_area	| categoricals
+#  shot_zone_basic	| categoricals
+#  shot_zone_range	| categoricals
 #     team_id		| unnecessary
 #     team_name		| unnecessary
 #     game_date		| #
@@ -29,18 +31,19 @@ import pickle
 #			- month	| unnecessary
 #			- day	| unnecessary
 #      matchup		| unnecessary
-#     opponent		| unnecessary
+#     opponent		| categoricals
 #      shot_id		| unnecessary
 ########################################
 
 class SVM_Classifier(Classifier):
-	def __init__(self, probability=True, log_proba=False, max_iter = 10000, verbose=False):
+	def __init__(self, probability=True, log_proba=False, max_iter = 10000, verbose=False, vaildOn=False):
 		super().__init__()
 
 		self.probability = probability
 		self.log_proba = log_proba
 		self.max_iter = max_iter
 		self.verbose = verbose
+		self.vaildOn = vaildOn
 
 		self.numericals = ['loc_x','loc_y','shot_distance']
 		self.unnecessary=['combined_shot_type','game_event_id','lat','lon','playoffs','season','shot_zone_area','shot_zone_basic', 'shot_zone_range',
@@ -104,24 +107,31 @@ class SVM_Classifier(Classifier):
 
 	def train(self):
 		self.model = svm.SVC(probability=self.probability, max_iter=self.max_iter, verbose=self.verbose)
-		self.model.fit(self.train_x, self.train_y)
-
-	def test(self):
-		if not self.probability:
-			result = self.model.predict(self.test_x)
-		elif self.log_proba:
-			result = self.model.predict_log_proba(self.test_x)
+		if not self.vaildOn:
+			self.model.fit(self.train_x, self.train_y)
 		else:
-			result = self.model.predict_proba(self.test_x)
-		result = [value[0] for value in result]
-		self.test_y = result
+			self.model.fit(self.train_x, self.train_y)
+
+	def test(self, data):
+		if not self.probability:
+			result = self.model.predict(data)
+		elif self.log_proba:
+			result = self.model.predict_log_proba(data)
+		else:
+			result = self.model.predict_proba(data)
+		result = [value[1] for value in result]
+		return result
 
 	def printInSampleError(self):
-		print('Ein() = ',self.model.score(self.train_x, self.train_y))
+		if self.vaildOn:
+			print('In-sample accuarcy = ',self.model.score(self.train_x, self.train_y))
+			print('vaild-sample accuarcy = ', self.model.score(self.valid_x, self.valid_y))
+		else:
+			print('In-sample accuarcy = ',self.model.score(self.train_x, self.train_y))
 
 	def save(self):
 		with open('SVM_classifier.pkl', 'wb') as fid:
-			pickle.dump(self.model, fid)   
+			pickle.dump(self.model, fid) 
 
 	def load(self):
 		try:
@@ -129,3 +139,24 @@ class SVM_Classifier(Classifier):
 				self.model = pickle.load(fid)
 		except:
 			print('can\'t load model')
+
+	def printLogLoss(self):
+		if self.vaildOn:
+			vaild_ll = self.test(self.valid_x)
+			vaild_ll = self.postProcess(vaild_ll)
+			print('vaild log loss = ',self.logloss(self.valid_y, vaild_ll))
+
+	def logloss(self, act, pred):
+		epsilon = 1e-15
+		pred = sp.maximum(epsilon, pred)
+		pred = sp.minimum(1-epsilon, pred)
+		ll = sum(act*sp.log(pred) + sp.subtract(1,act)*sp.log(sp.subtract(1,pred)))
+		ll = ll * -1.0/len(act)
+		return ll
+
+	def postProcess(self, result):
+		returnValue = []
+		for value in result:
+			temp = 0.5 + ratio*(value-0.5)
+			returnValue.append(temp)
+		return returnValue

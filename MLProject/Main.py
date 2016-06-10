@@ -4,7 +4,7 @@ from Meta_Classifier import *
 def main():
 	
 	print('Start program')
-	SVM_HanDa = SVM_Classifier(probability=True, log_proba=False, max_iter=10000, verbose=True)
+	SVM_HanDa = SVM_Classifier(probability=True, log_proba=False, max_iter=10000, verbose=True, vaildOn=True)
 	
 	print('loading data')
 	SVM_HanDa.loaddata(print_legend=True)
@@ -13,16 +13,18 @@ def main():
 	print('training')
 	SVM_HanDa.train()
 	SVM_HanDa.printInSampleError()
+	
 
 	print('saving')
 	SVM_HanDa.save()
 	'''
 	print('loading')
 	SVM_HanDa.load()
+	SVM_HanDa.printLogLoss()
 
-	print('testing')
-	SVM_HanDa.test()
-	SVM_HanDa.export_answer()
+	#print('testing')
+	#SVM_HanDa.test()
+	#SVM_HanDa.export_answer()
 	'''
 	
 	getter = MetaClassifier()
