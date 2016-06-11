@@ -143,6 +143,9 @@ class Classifier(object):
 		train_y = [record[index_y] for record in train_data]
 		self.test_x = [record[:index_y] + record[index_y+1:] for record in test_data]
 
+		self.total_x = train_x
+		self.total_y = train_y
+
 		valid_fraction=0.9
 		train_num=int(len(train_x)*valid_fraction)
 		self.valid_x = train_x[train_num:]

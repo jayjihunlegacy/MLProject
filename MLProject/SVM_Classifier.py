@@ -1,5 +1,5 @@
 from Classifiers import *
-from sklearn import svm
+from sklearn import svm, preprocessing
 from math import log
 import scipy as sp
 import pickle
@@ -106,7 +106,8 @@ class SVM_Classifier(Classifier):
 		return (removed, legend)
 
 	def train(self):
-		self.model = svm.SVC(probability=self.probability, max_iter=self.max_iter, verbose=self.verbose)
+		#self.model = svm.LinearSVC(probability=self.probability, max_iter=self.max_iter, verbose=self.verbose)
+		self.model = svm.SVC(C=0.01, probability=self.probability, max_iter=self.max_iter, verbose=self.verbose)
 		if not self.vaildOn:
 			self.model.fit(self.train_x, self.train_y)
 		else:
@@ -121,6 +122,12 @@ class SVM_Classifier(Classifier):
 			result = self.model.predict_proba(data)
 		result = [value[1] for value in result]
 		return result
+
+	def stdScaler(self):
+		stdScaler = preprocessing.StandardScaler().fit(self.train_x)
+		stdScaler.transform(self.train_x)
+		stdScaler = preprocessing.StandardScaler().fit(self.valid_x)
+		stdScaler.transform(self.valid_x)
 
 	def printInSampleError(self):
 		if self.vaildOn:
@@ -156,6 +163,7 @@ class SVM_Classifier(Classifier):
 
 	def postProcess(self, result):
 		returnValue = []
+		ratio=1.0
 		for value in result:
 			temp = 0.5 + ratio*(value-0.5)
 			returnValue.append(temp)

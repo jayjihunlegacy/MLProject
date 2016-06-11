@@ -9,7 +9,9 @@ def main():
 	print('loading data')
 	SVM_HanDa.loaddata(print_legend=True)
 	
-	'''
+	print('Scaling')
+	SVM_HanDa.stdScaler()
+	
 	print('training')
 	SVM_HanDa.train()
 	SVM_HanDa.printInSampleError()
@@ -17,13 +19,17 @@ def main():
 
 	print('saving')
 	SVM_HanDa.save()
+	
 	'''
 	print('loading')
 	SVM_HanDa.load()
+	
+	'''
+
 	SVM_HanDa.printLogLoss()
 
 	#print('testing')
-	#SVM_HanDa.test()
+	#SVM_HanDa.test_y = SVM_HanDa.test(self.test_x)
 	#SVM_HanDa.export_answer()
 	'''
 	
